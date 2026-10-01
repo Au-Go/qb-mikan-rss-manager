@@ -4,9 +4,6 @@
 
 - **蜜柑计划**（镜像站 `https://mikanani.kas.pub`）提供每季新番的字幕组 RSS。
 - **qBittorrent 5.0+** 通过 WebUI 的 RSS 功能订阅这些源并下载种子。
-- 本程序在已有的采集脚本 `mikan_rss_collector.py` 之上做总控，**不修改**该脚本。
-
-核心痛点：蜜柑 RSS 文档的 `<title>` 带 `Mikan Project - ` 前缀，手动添加后 qB 的 RSS 列表会显示这个前缀。本程序在 `addFeed` 时把 `path` 直接设为**清洗后的名称**（去前缀、截前 10 字），qB 树里显示的就是干净名字，无需再手动改。
 
 仅使用 **Python 标准库**，无任何第三方依赖。
 
