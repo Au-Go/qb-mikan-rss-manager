@@ -1,0 +1,132 @@
+蜜柑计划（mikanani.kas.pub）季度字幕组 RSS 采集器 — 使用说明
+================================================================
+
+【脚本简介】
+mikan_rss_collector.py 可一键抓取蜜柑计划某一季度全部番组，
+以及每个番组下所有字幕组的 RSS 订阅地址。
+仅使用 Python 标准库，无需安装任何第三方依赖。
+
+依赖环境：
+  - Python 3.8 及以上（本机通过 py 启动器调用，见下方"重要提示"）
+  - 可访问 https://mikanani.kas.pub 的网络环境
+
+
+【重要提示：本机如何运行 Python】
+本机的 python / python3 命令指向 Windows 商店的占位程序，
+直接运行会无输出并以退出码 49 失败。
+请统一使用 py 启动器运行本脚本：
+
+    py -3 mikan_rss_collector.py 参数...
+
+
+【基本用法】
+在脚本所在目录打开终端执行：
+
+  1) 采集某个季度（常用）
+     py -3 mikan_rss_collector.py -y 2026 -s 冬
+     py -3 mikan_rss_collector.py -y 2025 -s Fall
+
+  2) 先小批量试跑，确认无误后再全量采集
+     py -3 mikan_rss_collector.py -y 2025 -s 秋 --limit 5
+
+  3) 指定输出目录
+     py -3 mikan_rss_collector.py -y 2025 -s 秋 -o D:\mikan输出
+
+【参数说明】
+  -y, --year    年份，必填。例如 2025
+  -s, --season  季度，必填。可写中文或英文：
+                春 / 夏 / 秋 / 冬
+                Spring / Summer / Fall（或 Autumn）/ Winter
+                也兼容数字 1=春 2=夏 3=秋 4=冬
+  --limit       只采集前 N 个番组（0 = 全部，默认 0）。
+                用于测试，正式采集请不要设置。
+  --delay       每次请求之间的间隔秒数，默认 0.4。
+                网络慢或怕给站点压力可调大（如 0.8），
+                严禁设为 0 或负数。
+  -o, --outdir  输出目录，默认为脚本下的 output/ 目录。
+
+【输出文件】
+采集完成后在输出目录生成三个文件（以 2025 秋为例）：
+
+  1) 2025秋_rss.json
+     结构化完整数据。字段包括：
+       bangumi_id   番组 ID
+       title        番组标题
+       rss_all      该番组全部字幕组的聚合 RSS
+       subgroups    字幕组列表：subgroup_id（组 ID）、name（组名）、
+                    rss（该组单独的 RSS 地址）
+     适合程序处理、二次开发。
+
+  2) 2025秋_rss.opml
+     OPML 订阅清单，可直接导入任意 RSS 阅读器批量订阅：
+       - Inoreader：设置 → 导入/导出 → 导入 OPML
+       - Follow：订阅源 → 添加 → 导入 OPML
+       - NetNewsWire / Reeder / FluxNews 等：文件 → 导入订阅
+     每个字幕组一条订阅（另有"番组名 (全部)"的聚合订阅，
+     不需要聚合源的话可在阅读器里删除）。
+
+  3) 2025秋_rss.csv
+     扁平表格，三列：番组、字幕组、RSS地址。
+     编码为 UTF-8（带 BOM），Excel 可直接双击打开不乱码。
+
+本次（2025 秋）实测结果：80 个番组、392 个字幕组条目、共 472 条 RSS。
+
+
+【RSS 地址格式（供手动使用）】
+  番组聚合（该番组所有字幕组合并）：
+    https://mikanani.kas.pub/RSS/Bangumi?bangumiId={番组ID}
+  单个字幕组：
+    https://mikanani.kas.pub/RSS/Bangumi?bangumiId={番组ID}&subgroupid={字幕组ID}
+这两个地址已在浏览器/curl 中实测返回合法 RSS XML，可直接订阅。
+
+
+【站点接口原理（脚本依据）】
+  1. 季度番组目录：
+     GET /Home/BangumiCoverFlowByDayOfWeek?year={年}&seasonStr={春|夏|秋|冬}
+     - 一次返回整季所有番组的 HTML，无分页
+     - seasonStr 必须是中文单字：春、夏、秋、冬
+  2. 番组详情页：
+     GET /Home/Bangumi/{番组ID}
+     - 解析页面中的字幕组列表（名称与 subgroup ID）
+  3. 注意：首页季度下拉菜单走的 /Home/BangumiCoverFlow 接口
+     只返回"你自己订阅过"的番组，不是全季度目录，
+     脚本使用的是 ByDayOfWeek 接口，才是完整目录。
+
+
+【注意事项】
+  1. 礼貌抓取：请保持默认 --delay（≥0.4 秒），不要并发、
+     不要写死循环高频请求。这是一个个人维护的镜像站，
+     过度抓取可能导致被封 IP 或站点宕机，损人不利己。
+  2. 镜像站稳定性：mikanani.kas.pub 是非官方镜像，
+     偶发 500/超时属正常，脚本内置 3 次重试；
+     若持续失败，请隔一段时间再试，或改用官方站
+     https://mikanani.me（接口路径相同，改脚本顶部 BASE 常量即可）。
+  3. 数据时效：番组的字幕组列表会随时间变化
+     （新组加入、旧组停更），建议每周或每季度重新采集一次，
+     不要指望一份 OPML 永远不过期。
+  4. 个别番组可能没有字幕组（新番刚开播时常见），
+     脚本仍会输出该番组及其聚合 RSS 地址，属正常现象。
+  5. 只做个人订阅用途。下载资源请遵守当地法律法规及
+     字幕组的发布协议，本脚本仅收集 RSS 订阅链接，
+     不涉及任何资源下载行为。
+  6. 控制台中文乱码：脚本输出为 UTF-8，在 GBK 代码页的
+     终端里可能显示乱码，但生成的 json/opml/csv 文件
+     本身是标准 UTF-8，内容无损。如需正常显示，可在
+     运行前设置：set PYTHONIOENCODING=utf-8
+
+【常见问题】
+  Q: 运行报 "无法识别的季度" ?
+  A: 检查 -s 参数，只能是 春/夏/秋/冬 或对应英文。
+
+  Q: 运行报 "该季度没有获取到任何番组" ?
+  A: 检查 -y 年份是否写错；季度太新（尚未开播）时目录也可能为空。
+
+  Q: 想要别的年份/季度？
+  A: 直接换 -y 和 -s 即可，例如：
+     py -3 mikan_rss_collector.py -y 2024 -s 春
+
+  Q: 如何只订阅字幕组 RSS、不要聚合 RSS？
+  A: 导入 OPML 后在阅读器里删除"xxx (全部)"条目；
+     或者只使用 CSV/JSON 里 subgroup 对应的地址。
+
+—— 生成于 2026-10-01，对应脚本版本以 mikan_rss_collector.py 为准。
