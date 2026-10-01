@@ -29,7 +29,7 @@
 | `mikan.bat` | **快捷启动（双击即可运行）**，可透传命令行参数 |
 | `mikan_qb_manager.py` | 主程序（入口） |
 | `qb_client.py` | qBittorrent WebUI API 封装（登录 / RSS / 下载） |
-| `mikan_rss_collector.py` | 已有的季度采集脚本（本程序只调用，不修改） |
+| `mikan_rss_collector.py` | 季度采集脚本 |
 | `使用说明.txt` | 采集脚本的原使用说明 |
 | `config.json` | 首次运行自动生成：qB 连接、动画根目录、番组→文件夹映射 |
 | `processed.json` | 已处理条目记录（`feedpath\|articleid` 列表），防重复下载 |
